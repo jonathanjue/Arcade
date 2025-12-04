@@ -113,10 +113,10 @@ def run_game_loop(state_manager):
                 if event.type == pygame.QUIT:
                     print("Quit event received")
                     running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        # ESC key handling is done by individual game states
-                        pass
+            
+            # Forward events to state manager for handling
+            if not state_manager.handle_events(events):
+                running = False
             
             # Update state manager
             state_manager.update(dt)

@@ -32,6 +32,8 @@ class Colors:
     DARK_RED = (139, 0, 0)
     DARK_GREEN = (0, 100, 0)
     DARK_BLUE = (0, 0, 139)
+    GRAY = (128, 128, 128)
+    DARK_GRAY = (64, 64, 64)
 
 # Menu colors
 MENU_BG_COLOR = Colors.BLACK

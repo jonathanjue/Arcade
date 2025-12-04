@@ -1,0 +1,3 @@
+# Pacman Game Dependencies
+
+pygame==2.6.1

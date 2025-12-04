@@ -150,9 +150,9 @@ class DoomGame(BaseGameState):
             for dx in range(-offset, offset + 1):
                 for dy in range(-offset, offset + 1):
                     if dx != 0 or dy != 0:
-                        glow_rect.offset(dx * 2, dy * 2)
+                        glow_rect.move_ip(dx * 2, dy * 2)
                         screen.blit(glow_surface, glow_rect)
-                        glow_rect.offset(-dx * 2, -dy * 2)  # Reset position
+                        glow_rect.move_ip(-dx * 2, -dy * 2)  # Reset position
         
         # Render main title
         title_surface = self.title_font.render(title_text, True, title_color)

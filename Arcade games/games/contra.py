@@ -234,9 +234,9 @@ class ContraGame(BaseGameState):
         for dx in [-2, -1, 0, 1, 2]:
             for dy in [-2, -1, 0, 1, 2]:
                 if dx != 0 or dy != 0:
-                    border_rect.offset(dx, dy)
+                    border_rect.move_ip(dx, dy)
                     screen.blit(message_surface, border_rect)
-                    border_rect.offset(-dx, -dy)
+                    border_rect.move_ip(-dx, -dy)
         
         # Render main message
         main_surface = self.message_font.render(message, True, message_color)
