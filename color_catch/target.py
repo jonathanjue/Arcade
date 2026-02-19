@@ -3,13 +3,17 @@ import random
 from constants import TARGET_WIDTH, TARGET_HEIGHT, TARGET_INITIAL_SPEED, RED, BLUE, GREEN, YELLOW, PURPLE, ORANGE, PINK, SCREEN_WIDTH, SCREEN_HEIGHT, SPEED_INCREASE_PERCENTAGE, MAX_SPEED
 
 class Target:
-    def __init__(self, x=None, y=None):
+    def __init__(self, x=None, y=None, speed_multiplier=1.0):
         # Initialize with random position if not provided
         self.x = x if x is not None else random.randint(0, SCREEN_WIDTH - TARGET_WIDTH)
         self.y = y if y is not None else random.randint(0, SCREEN_HEIGHT - TARGET_HEIGHT)
         self.width = TARGET_WIDTH
         self.height = TARGET_HEIGHT
-        self.speed = TARGET_INITIAL_SPEED
+        
+        # Base speed and multiplier for difficulty adjustment
+        self.base_speed = TARGET_INITIAL_SPEED
+        self.speed_multiplier = speed_multiplier
+        self.speed = TARGET_INITIAL_SPEED * speed_multiplier
 
         # Random color for the target
         self.color = self._get_random_color()
@@ -27,6 +31,18 @@ class Target:
         self.screen_width = SCREEN_WIDTH
         self.screen_height = SCREEN_HEIGHT
 
+        # Slowdown multiplier (1.0 = normal speed, lower = slower)
+        self._slowdown_multiplier = 1.0
+
+    @property
+    def slowdown_multiplier(self):
+        """Get the current slowdown multiplier"""
+        return self._slowdown_multiplier
+
+    def set_slowdown(self, multiplier):
+        """Set the slowdown multiplier for the target"""
+        self._slowdown_multiplier = multiplier
+
     def _get_random_color(self):
         """Get a random color for the target"""
         colors = [RED, BLUE, GREEN, YELLOW, PURPLE]
@@ -37,9 +53,9 @@ class Target:
         # Store previous position for smooth movement
         prev_x, prev_y = self.x, self.y
 
-        # Move target in current direction
-        self.x += self.speed * self.direction_x
-        self.y += self.speed * self.direction_y
+        # Move target in current direction with slowdown multiplier applied
+        self.x += self.speed * self.slowdown_multiplier * self.direction_x
+        self.y += self.speed * self.slowdown_multiplier * self.direction_y
 
         # Update rectangle position
         self.rect.x = self.x
@@ -182,11 +198,15 @@ class Target:
 
     def _increase_speed(self):
         """Increase target speed with percentage-based progression and maximum cap"""
-        # Calculate new speed with percentage increase
-        new_speed = self.speed * (1 + SPEED_INCREASE_PERCENTAGE)
-
-        # Apply maximum speed cap
-        self.speed = min(new_speed, MAX_SPEED)
+        # Calculate new base speed with percentage increase
+        new_base_speed = self.base_speed * (1 + SPEED_INCREASE_PERCENTAGE)
+        
+        # Apply maximum speed cap to base speed
+        self.base_speed = min(new_base_speed, MAX_SPEED)
+        
+        # Apply multiplier to actual speed
+        self.speed = self.base_speed * self.speed_multiplier
+        self.speed = min(self.speed, MAX_SPEED)
 
         # Ensure speed doesn't get too high to cause physics issues
         if self.speed > MAX_SPEED:
@@ -194,6 +214,12 @@ class Target:
 
         # Change color based on speed for visual feedback
         self._update_color_based_on_speed()
+    
+    def set_speed_multiplier(self, multiplier):
+        """Set the speed multiplier for difficulty adjustment"""
+        self.speed_multiplier = multiplier
+        self.speed = self.base_speed * multiplier
+        self.speed = min(self.speed, MAX_SPEED)
 
     def _update_color_based_on_speed(self):
         """Update target color based on current speed for visual feedback"""

@@ -3,7 +3,9 @@ import time
 import math
 import random
 
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLACK, SPEED_INDICATOR_COLOR, TIME_INDICATOR_COLOR, GREEN, YELLOW, RED, PARTICLE_COUNT, SCREEN_SHAKE_DURATION, SCREEN_SHAKE_INTENSITY, START, PLAYING, GAME_OVER, VICTORY, PAUSED
+from constants import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLACK, SPEED_INDICATOR_COLOR, TIME_INDICATOR_COLOR, GREEN, YELLOW, RED, CYAN, PARTICLE_COUNT, SCREEN_SHAKE_DURATION, SCREEN_SHAKE_INTENSITY, START, PLAYING, GAME_OVER, VICTORY, PAUSED, DIFFICULTY_SELECT
+from constants import DASH_COOLDOWN, SLOWDOWN_DURATION, SLOWDOWN_COOLDOWN, SLOWDOWN_PERCENTAGE
+from constants import DIFFICULTY_EASY, DIFFICULTY_NORMAL, DIFFICULTY_HARD, DIFFICULTY_SETTINGS
 from player import Player
 from target import Target
 from particle import ParticleSystem
@@ -29,6 +31,10 @@ class Game:
         self.win_score = 50  # Win condition: reach 50 points
         self.max_speed_reached = False  # Game over condition
 
+        # Difficulty settings
+        self.current_difficulty = DIFFICULTY_NORMAL  # Default difficulty
+        self.abilities_enabled = True  # Based on difficulty
+
         # Command system variables
         self.command_input = ""  # Current command being typed
         self.command_active = False  # Whether command input is active
@@ -40,6 +46,11 @@ class Game:
         self.screen_shake = 0
         self.shake_intensity = 0
 
+        # Slowdown ability tracking
+        self.slowdown_active = False
+        self.slowdown_start_time = 0
+        self.last_slowdown_time = -SLOWDOWN_COOLDOWN  # So ability is available at start
+
         # Font initialization for score display
         self.font = pygame.font.SysFont('Arial', 36)
 
@@ -48,11 +59,16 @@ class Game:
 
     def _initialize_game_objects(self):
         """Initialize player and initial targets"""
-        # Create player at bottom center of screen
-        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50)
+        # Get difficulty settings
+        settings = DIFFICULTY_SETTINGS[self.current_difficulty]
+        speed_multiplier = settings["speed_multiplier"]
+        abilities_enabled = settings["abilities_enabled"]
+        
+        # Create player at bottom center of screen with abilities setting
+        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50, abilities_enabled=abilities_enabled)
 
-        # Create initial target
-        self.target = Target()
+        # Create initial target with speed multiplier
+        self.target = Target(speed_multiplier=speed_multiplier)
 
     def _create_target(self):
         """Create a new target at random position"""
@@ -63,6 +79,9 @@ class Game:
         """Update game state"""
         if self.game_state == START:
             return  # No updates needed for start screen
+        
+        if self.game_state == DIFFICULTY_SELECT:
+            return  # No updates needed for difficulty select screen
 
         if self.game_state == GAME_OVER or self.game_state == VICTORY:
             return
@@ -89,6 +108,9 @@ class Game:
 
             # Check game over condition (target speed reaches maximum)
             self._check_game_over_condition()
+
+            # Update slowdown effect
+            self._update_slowdown()
 
         # Always update visual effects (particles, screen shake) even when paused
         # Update particle system
@@ -156,6 +178,9 @@ class Game:
         """Render game objects"""
         if self.game_state == START:
             self.render_start_screen()
+            return
+        elif self.game_state == DIFFICULTY_SELECT:
+            self.render_difficulty_select_screen()
             return
         elif self.game_state == VICTORY:
             self.render_victory_screen()
@@ -331,6 +356,12 @@ class Game:
 
         # Draw time indicator in top-right corner
         self._draw_time_indicator()
+        
+        # Draw dash cooldown indicator
+        self._draw_dash_indicator()
+        
+        # Draw slowdown ability indicator
+        self._draw_slowdown_indicator()
 
     def _draw_speed_indicator(self):
         """Draw speed indicator to show current target speed"""
@@ -377,6 +408,118 @@ class Game:
         # Draw time indicator on screen
         self.screen.blit(time_surface, time_rect)
 
+    def _draw_dash_indicator(self):
+        """Draw dash cooldown indicator"""
+        # Don't show in Hard mode (abilities disabled)
+        if not self.abilities_enabled:
+            return
+        
+        if not self.player:
+            return
+        
+        import time as time_module
+        current_time = time_module.time()
+        time_since_last_dash = current_time - self.player.last_dash_time
+        cooldown_remaining = max(0, DASH_COOLDOWN - time_since_last_dash)
+        
+        # Determine indicator color and text based on cooldown
+        if cooldown_remaining <= 0:
+            # Dash is ready
+            dash_text = "DASH READY"
+            dash_color = GREEN
+        else:
+            # Dash on cooldown
+            dash_text = f"DASH: {cooldown_remaining:.1f}s"
+            dash_color = YELLOW if cooldown_remaining < 1.0 else (150, 150, 150)
+        
+        # Render dash indicator
+        dash_font = pygame.font.SysFont('Arial', 24)
+        dash_surface = dash_font.render(dash_text, True, dash_color)
+        dash_rect = dash_surface.get_rect()
+        dash_rect.topleft = (20, 100)
+        
+        # Draw background bar for cooldown
+        bar_width = 100
+        bar_height = 10
+        bar_x = 20
+        bar_y = 130
+        
+        # Draw background bar
+        pygame.draw.rect(self.screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+        
+        # Draw cooldown progress
+        if cooldown_remaining > 0:
+            progress = time_since_last_dash / DASH_COOLDOWN
+            progress = min(1.0, progress)
+            pygame.draw.rect(self.screen, dash_color, (bar_x, bar_y, int(bar_width * progress), bar_height))
+        else:
+            pygame.draw.rect(self.screen, dash_color, (bar_x, bar_y, bar_width, bar_height))
+        
+        # Draw border
+        pygame.draw.rect(self.screen, WHITE, (bar_x, bar_y, bar_width, bar_height), 1)
+        
+        # Draw dash text
+        self.screen.blit(dash_surface, dash_rect)
+
+    def _draw_slowdown_indicator(self):
+        """Draw slowdown ability indicator"""
+        # Don't show in Hard mode (abilities disabled)
+        if not self.abilities_enabled:
+            return
+        
+        current_time = time.time()
+        time_since_last_slowdown = current_time - self.last_slowdown_time
+        cooldown_remaining = max(0, SLOWDOWN_COOLDOWN - time_since_last_slowdown)
+        
+        # Determine indicator color and text based on state
+        if self.slowdown_active:
+            # Slowdown is active
+            slowdown_text = "SLOWDOWN ACTIVE"
+            slowdown_color = CYAN
+        elif cooldown_remaining <= 0:
+            # Slowdown is ready
+            slowdown_text = "SLOWDOWN READY"
+            slowdown_color = GREEN
+        else:
+            # Slowdown on cooldown
+            slowdown_text = f"SLOWDOWN: {cooldown_remaining:.1f}s"
+            slowdown_color = YELLOW if cooldown_remaining < 2.0 else (150, 150, 150)
+        
+        # Render slowdown indicator
+        slowdown_font = pygame.font.SysFont('Arial', 24)
+        slowdown_surface = slowdown_font.render(slowdown_text, True, slowdown_color)
+        slowdown_rect = slowdown_surface.get_rect()
+        slowdown_rect.topleft = (20, 150)
+        
+        # Draw background bar for cooldown
+        bar_width = 100
+        bar_height = 10
+        bar_x = 20
+        bar_y = 180
+        
+        # Draw background bar
+        pygame.draw.rect(self.screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+        
+        # Draw cooldown progress
+        if self.slowdown_active:
+            # Show remaining duration
+            elapsed = current_time - self.slowdown_start_time
+            remaining = max(0, SLOWDOWN_DURATION - elapsed)
+            progress = remaining / SLOWDOWN_DURATION
+            pygame.draw.rect(self.screen, slowdown_color, (bar_x, bar_y, int(bar_width * progress), bar_height))
+        elif cooldown_remaining > 0:
+            progress = time_since_last_slowdown / SLOWDOWN_COOLDOWN
+            progress = min(1.0, progress)
+            pygame.draw.rect(self.screen, slowdown_color, (bar_x, bar_y, int(bar_width * progress), bar_height))
+        else:
+            pygame.draw.rect(self.screen, slowdown_color, (bar_x, bar_y, bar_width, bar_height))
+        
+        # Draw border
+        pygame.draw.rect(self.screen, WHITE, (bar_x, bar_y, bar_width, bar_height), 1)
+        
+        # Draw slowdown text
+        self.screen.blit(slowdown_surface, slowdown_rect)
+
     def render_pause_screen(self):
         """Render the pause screen with enhanced visual feedback"""
         # Draw background with dimming effect
@@ -391,6 +534,10 @@ class Game:
         resume_font = pygame.font.SysFont('Arial', 36)
         resume_text = resume_font.render("Press ESC to Resume", True, WHITE)
         resume_rect = resume_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
+        
+        # Create main menu option
+        menu_text = resume_font.render("Press M for Main Menu", True, WHITE)
+        menu_rect = menu_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
 
         # Add visual feedback elements
         self._draw_pause_visual_feedback()
@@ -417,6 +564,7 @@ class Game:
         # Draw all elements
         self.screen.blit(pause_text, pause_rect)
         self.screen.blit(resume_text, resume_rect)
+        self.screen.blit(menu_text, menu_rect)
 
     def _draw_pause_background(self):
         """Draw pause screen background with dimming effect"""
@@ -559,8 +707,9 @@ class Game:
         instructions_font = pygame.font.SysFont('Arial', 24)
         instructions_lines = [
             "Catch the colored targets to score points!",
-            "Use LEFT and RIGHT arrow keys to move",
-            "Avoid letting targets reach maximum speed!",
+            "Use ARROW keys to move in all directions",
+            "Press SPACE to dash (2.5s cooldown)",
+            "Press R to slow down (8s cooldown)",
             "Reach 50 points to win!"
         ]
 
@@ -580,6 +729,41 @@ class Game:
 
         # Draw start prompt with pulsing animation
         self._draw_pulsing_start_prompt(start_text, start_rect)
+
+    def render_difficulty_select_screen(self):
+        """Render the difficulty selection screen"""
+        # Draw background
+        self._draw_start_background()
+        
+        # Title
+        title_font = pygame.font.SysFont('Arial', 56, bold=True)
+        title_text = title_font.render("Select Difficulty", True, YELLOW)
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
+        self.screen.blit(title_text, title_rect)
+        
+        # Difficulty options
+        options_font = pygame.font.SysFont('Arial', 36)
+        options = [
+            (DIFFICULTY_EASY, "1. Easy - Slower enemies, abilities available", GREEN),
+            (DIFFICULTY_NORMAL, "2. Normal - Standard speed, abilities available", YELLOW),
+            (DIFFICULTY_HARD, "3. Hard - Standard speed, NO abilities", RED),
+        ]
+        
+        for i, (diff_key, text, color) in enumerate(options):
+            option_text = options_font.render(text, True, color)
+            option_rect = option_text.get_rect(center=(SCREEN_WIDTH // 2, 220 + i * 60))
+            self.screen.blit(option_text, option_rect)
+        
+        # Instructions
+        inst_font = pygame.font.SysFont('Arial', 24)
+        inst_text = inst_font.render("Press 1, 2, or 3 to select difficulty", True, WHITE)
+        inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, 450))
+        self.screen.blit(inst_text, inst_rect)
+        
+        # Back option
+        back_text = inst_font.render("Press ESC to go back", True, (150, 150, 150))
+        back_rect = back_text.get_rect(center=(SCREEN_WIDTH // 2, 500))
+        self.screen.blit(back_text, back_rect)
 
     def _draw_start_background(self):
         """Draw start screen background with decorative elements"""
@@ -842,8 +1026,19 @@ class Game:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 if self.game_state == START and event.key == pygame.K_SPACE:
-                    # Start game from start screen
-                    self._start_game()
+                    # Go to difficulty selection screen
+                    self.game_state = DIFFICULTY_SELECT
+                elif self.game_state == DIFFICULTY_SELECT:
+                    # Handle difficulty selection
+                    if event.key == pygame.K_1:
+                        self._select_difficulty(DIFFICULTY_EASY)
+                    elif event.key == pygame.K_2:
+                        self._select_difficulty(DIFFICULTY_NORMAL)
+                    elif event.key == pygame.K_3:
+                        self._select_difficulty(DIFFICULTY_HARD)
+                    elif event.key == pygame.K_ESCAPE:
+                        # Go back to start screen
+                        self.game_state = START
                 elif self.game_state == VICTORY and event.key == pygame.K_r:
                     self._restart_game()
                 elif self.game_state == GAME_OVER and event.key == pygame.K_r:
@@ -858,6 +1053,17 @@ class Game:
                         self.command_active = False
                         self.command_input = ""  # Clear command input when unpausing
                         print("Game resumed.")
+                elif event.key == pygame.K_m and self.paused and self.game_state == PLAYING:
+                    # Go back to main menu from pause menu
+                    self._return_to_main_menu()
+                elif event.key == pygame.K_SPACE and self.game_state == PLAYING and not self.paused:
+                    # Handle dash with space bar during gameplay (only if abilities enabled)
+                    if self.abilities_enabled and self.player and self.player.can_dash():
+                        self.player.start_dash()
+                elif event.key == pygame.K_r and self.game_state == PLAYING and not self.paused:
+                    # Handle slowdown ability with R key (only if abilities enabled)
+                    if self.abilities_enabled:
+                        self._activate_slowdown()
                 elif event.key == pygame.K_RETURN and self.paused and self.command_active:
                     # Handle command submission when paused
                     self._handle_command_submission()
@@ -874,19 +1080,62 @@ class Game:
         self.game_state = PLAYING
         self.start_time = time.time()
         print("Game started!")
+    
+    def _select_difficulty(self, difficulty):
+        """Set the selected difficulty and start the game"""
+        self.current_difficulty = difficulty
+        settings = DIFFICULTY_SETTINGS[difficulty]
+        self.abilities_enabled = settings["abilities_enabled"]
+        
+        # Apply speed multiplier to target
+        speed_multiplier = settings["speed_multiplier"]
+        if self.target:
+            self.target.set_speed_multiplier(speed_multiplier)
+        
+        # Update player abilities
+        if self.player:
+            self.player.abilities_enabled = self.abilities_enabled
+        
+        # Start the game
+        self._start_game()
+        print(f"Difficulty set to {settings['name']}: {settings['description']}")
 
     def _restart_game(self):
-        """Restart the game by resetting all game state"""
+        """Restart the game by going to difficulty selection"""
         # Reset game state
         self.score = 0
         self.victory = False
         self.game_over = False
         self.max_speed_reached = False
-        self.game_state = PLAYING
-        self.start_time = time.time()
+        self.game_state = DIFFICULTY_SELECT  # Go to difficulty select
+        
+        # Reset slowdown state
+        self.slowdown_active = False
+        self.last_slowdown_time = -SLOWDOWN_COOLDOWN
 
         # Reinitialize game objects
         self._initialize_game_objects()
+
+    def _return_to_main_menu(self):
+        """Return to the main menu from pause menu"""
+        # Reset game state
+        self.score = 0
+        self.victory = False
+        self.game_over = False
+        self.max_speed_reached = False
+        self.paused = False
+        self.command_active = False
+        self.command_input = ""
+        self.game_state = START  # Go to start screen
+        
+        # Reset slowdown state
+        self.slowdown_active = False
+        self.last_slowdown_time = -SLOWDOWN_COOLDOWN
+
+        # Reinitialize game objects
+        self._initialize_game_objects()
+        
+        print("Returned to main menu.")
 
 
     def _handle_key_down(self, event):
@@ -949,6 +1198,46 @@ class Game:
                 self.player.speed = self.normal_player_speed  # Restore normal speed
                 self.speed_cheat_active = False
                 print("SPEED command deactivated! Player speed restored to normal.")
+
+    def _activate_slowdown(self):
+        """Activate the slowdown ability if cooldown has passed"""
+        current_time = time.time()
+        time_since_last_slowdown = current_time - self.last_slowdown_time
+        
+        # Check if cooldown has passed
+        if time_since_last_slowdown >= SLOWDOWN_COOLDOWN:
+            self.slowdown_active = True
+            self.slowdown_start_time = current_time
+            # Note: Cooldown starts when slowdown ends, not when it begins
+            
+            # Apply slowdown to all targets
+            if self.target:
+                self.target.set_slowdown(SLOWDOWN_PERCENTAGE)
+            for target in self.targets:
+                target.set_slowdown(SLOWDOWN_PERCENTAGE)
+            
+            print("Slowdown activated!")
+
+    def _update_slowdown(self):
+        """Update slowdown effect and check if it should end"""
+        if self.slowdown_active:
+            current_time = time.time()
+            elapsed_time = current_time - self.slowdown_start_time
+            
+            # Check if slowdown duration has passed
+            if elapsed_time >= SLOWDOWN_DURATION:
+                self.slowdown_active = False
+                
+                # Start cooldown now that slowdown has ended
+                self.last_slowdown_time = current_time
+                
+                # Restore normal speed to all targets
+                if self.target:
+                    self.target.set_slowdown(1.0)
+                for target in self.targets:
+                    target.set_slowdown(1.0)
+                
+                print("Slowdown ended!")
 
     def handle_volume_control(self, events):
         """Handle volume control and mute functionality"""
