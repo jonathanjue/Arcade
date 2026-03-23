@@ -79,12 +79,19 @@ def cast_ray(start_x, start_y, angle, max_len, dungeon):
 # ---------- Dungeon Generation ----------
 # Simple BSP‑style room placement
 
+class Door:
+    def __init__(self, x, y, target_room_idx=None):
+        self.x = x
+        self.y = y
+        self.target = target_room_idx  # None means leads to a brand‑new area
+
 def generate_dungeon():
     grid = [[1 for _ in range(MAP_HEIGHT)] for _ in range(MAP_WIDTH)]  # 1 = wall, 0 = floor
     rooms = []
+    doors = []  # list of Door objects per room index
     max_rooms = 8
     min_size, max_size = 3, 6
-    for _ in range(max_rooms):
+    for room_idx in range(max_rooms):
         w = random.randint(min_size, max_size)
         h = random.randint(min_size, max_size)
         x = random.randint(1, MAP_WIDTH - w - 1)
@@ -100,23 +107,48 @@ def generate_dungeon():
         # connect to previous room with a corridor
         if rooms:
             prev = rooms[-1]
-            # center points
             cx1, cy1 = new_room.center
             cx2, cy2 = prev.center
             if random.choice([True, False]):
-                # horizontal then vertical
                 for i in range(min(cx1, cx2), max(cx1, cx2) + 1):
                     grid[i][cy1] = 0
                 for j in range(min(cy1, cy2), max(cy1, cy2) + 1):
                     grid[cx2][j] = 0
             else:
-                # vertical then horizontal
                 for j in range(min(cy1, cy2), max(cy1, cy2) + 1):
                     grid[cx1][j] = 0
                 for i in range(min(cx1, cx2), max(cx1, cx2) + 1):
                     grid[i][cy2] = 0
         rooms.append(new_room)
-    return grid, rooms
+        doors.append([])  # placeholder for this room's doors
+    # Ensure at least 2 doors per room
+    for idx, room in enumerate(rooms):
+        while len(doors[idx]) < 2:
+            side = random.choice(['N','S','E','W'])
+            if side == 'N':
+                door_x = random.randint(room.left+1, room.right-1)
+                door_y = room.top
+                target_idx = (idx - 1) % len(rooms)
+            elif side == 'S':
+                door_x = random.randint(room.left+1, room.right-1)
+                door_y = room.bottom
+                target_idx = (idx + 1) % len(rooms)
+            elif side == 'W':
+                door_x = room.left
+                door_y = random.randint(room.top+1, room.bottom-1)
+                target_idx = (idx - 1) % len(rooms)
+            else:  # 'E'
+                door_x = room.right
+                door_y = random.randint(room.top+1, room.bottom-1)
+                target_idx = (idx + 1) % len(rooms)
+            # carve door opening
+            grid[door_x][door_y] = 0
+            # Randomly decide if this door leads to a new area (None) or existing room
+            if random.random() < 0.3:  # 30% chance of new area
+                doors[idx].append(Door(door_x, door_y, None))
+            else:
+                doors[idx].append(Door(door_x, door_y, target_idx))
+    return grid, rooms, doors
 
 # ---------- Entity Classes ----------
 class Player:
@@ -231,7 +263,14 @@ def main():
         DARKNESS_ALPHA = 150
         WALL_COLOR = (70, 70, 70)
         FLOOR_COLOR = (40, 40, 40)
-    dungeon, rooms = generate_dungeon()
+    dungeon, rooms, doors = generate_dungeon()
+    # Build a map from door tile coordinates to the Door object
+    # Stack to allow returning to previous maps
+    map_stack = []
+    door_map = {}
+    for idx, room_doors in enumerate(doors):
+        for door in room_doors:
+            door_map[(door.x, door.y)] = door
     # spawn player in first room centre
     start_room = rooms[0]
     player = Player(start_room.centerx * TILE_SIZE, start_room.centery * TILE_SIZE)
@@ -294,6 +333,40 @@ def main():
                 dx *= 0.7071
                 dy *= 0.7071
             player.move(dx, dy, dungeon)
+            # check for door teleportation
+            player_tile = (int(player.x / TILE_SIZE), int(player.y / TILE_SIZE))
+            if player_tile in door_map:
+                door = door_map[player_tile]
+                # If this door leads to an existing room, use it
+                if door.target is not None and door.target != -1:
+                    target_idx = door.target
+                    target_room = rooms[target_idx]
+                    # Teleport player to centre of target room
+                    player.x = target_room.centerx * TILE_SIZE
+                    player.y = target_room.centery * TILE_SIZE
+                    player.rect.topleft = (player.x, player.y)
+                elif door.target == -1:
+                    # Back to previous map
+                    if map_stack:
+                        dungeon, rooms, doors, player_x, player_y, player_topleft = map_stack.pop()
+                        player.x, player.y = player_x, player_y
+                        player.rect.topleft = player_topleft
+                else:
+                    # Create a brand‑new map (new area)
+                    # Save current state for back‑navigation
+                    map_stack.append((dungeon, rooms, doors, player.x, player.y, player.rect.topleft))
+                    # Generate a fresh dungeon
+                    dungeon, rooms, doors = generate_dungeon()
+                    # Place player in the start room of the new map
+                    start_room = rooms[0]
+                    player.x = start_room.centerx * TILE_SIZE
+                    player.y = start_room.centery * TILE_SIZE
+                    player.rect.topleft = (player.x, player.y)
+                    # Add a back door in the new start room linking back
+                    back_door = Door(start_room.centerx // TILE_SIZE, start_room.centery // TILE_SIZE, -1)
+                    doors[0].append(back_door)
+                    # Update the original door to point to this new map (store index -1 as placeholder)
+                    door.target = -1
 
         # Update bullets
         bullets = [b for b in bullets if b.update(dungeon)]
@@ -348,7 +421,26 @@ def main():
                 if dungeon[x][y] == 1:
                     pygame.draw.rect(screen, WALL_COLOR, rect)
                 else:
-                    pygame.draw.rect(screen, FLOOR_COLOR, rect)
+                    # brighter floor for visibility
+                    floor_vis = tuple(min(255, c + 80) for c in FLOOR_COLOR)
+                    pygame.draw.rect(screen, floor_vis, rect)
+        # highlight rooms with a subtle overlay
+        room_overlay = (0, 100, 0, 80)  # semi‑transparent green
+        for room in rooms:
+            overlay_surf = pygame.Surface((room.width * TILE_SIZE, room.height * TILE_SIZE), pygame.SRCALPHA)
+            overlay_surf.fill(room_overlay)
+            screen.blit(overlay_surf, (room.x * TILE_SIZE, room.y * TILE_SIZE))
+        # draw doors (if any) as bright orange markers
+        for room_doors in doors:
+            for door in room_doors:
+                # draw a smaller rectangle centered on the tile for visibility
+                door_rect = pygame.Rect(
+                    door.x * TILE_SIZE + TILE_SIZE//4,
+                    door.y * TILE_SIZE + TILE_SIZE//4,
+                    TILE_SIZE//2,
+                    TILE_SIZE//2,
+                )
+                pygame.draw.rect(screen, (255, 165, 0), door_rect)
         # draw entities (player, bullets, and enemies)
         player.draw(screen)
         for bullet in bullets:

@@ -1,0 +1,315 @@
+STORY_CHAPTERS = {
+    1: {
+        "title": "The Cursed Child",
+        "arc": "Cursed Child",
+        "intro": [
+            "Yuji Itadori swallows a cursed finger to save his friends.",
+            "Ryomen Sukuna, the King of Curses, takes residence in his body.",
+            "Now Yuji must prove his worth to the jujutsu world...",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "cursed_spirit_basic",
+        "opponent_name": "Cursed Spirit",
+        "stage": "tokyo_high",
+        "difficulty": "easy",
+        "boss": False,
+        "reward_cp": 100,
+        "unlock_char": None,
+        "unlock_stage": "tokyo_high",
+        "dialogue_before": [
+            "Satoru Gojo: 'Let's see if you can handle a cursed spirit, Yuji.'",
+            "Yuji: 'I'll do whatever it takes!'",
+        ],
+        "dialogue_after": [
+            "Gojo: 'Not bad. You've got potential, kid.'",
+            "Yuji: 'That was... intense. But I'm ready for more.'",
+        ],
+    },
+    2: {
+        "title": "Finger Bearer",
+        "arc": "Cursed Child",
+        "intro": [
+            "A special grade cursed spirit has appeared.",
+            "It bears one of Sukuna's fingers - and it's hungry for more.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "mahito",
+        "opponent_name": "Finger Bearer",
+        "stage": "cursed_womb",
+        "difficulty": "normal",
+        "boss": False,
+        "reward_cp": 120,
+        "unlock_char": "megumi",
+        "unlock_stage": "cursed_womb",
+        "dialogue_before": [
+            "Megumi: 'This one's different, Yuji. Stay sharp.'",
+            "Yuji: 'Right behind you!'",
+        ],
+        "dialogue_after": [
+            "Megumi: 'We did it. But there are more fingers out there.'",
+            "Yuji: 'Then we find them all.'",
+        ],
+    },
+    3: {
+        "title": "The Manipulator",
+        "arc": "Vs Mahito",
+        "intro": [
+            "Junpei Yoshino has fallen under Mahito's influence.",
+            "Yuji must save his friend from the curse's manipulation.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "mahito",
+        "opponent_name": "Mahito",
+        "stage": "shibuya",
+        "difficulty": "normal",
+        "boss": False,
+        "reward_cp": 150,
+        "unlock_char": "nobara",
+        "unlock_stage": "shibuya",
+        "dialogue_before": [
+            "Mahito: 'Humans are so fragile. Let me show you.'",
+            "Yuji: 'You won't get away with this!'",
+        ],
+        "dialogue_after": [
+            "Yuji: 'Junpei... I'm sorry I couldn't save you.'",
+            "Nobara: 'This isn't over. Mahito will pay.'",
+        ],
+    },
+    4: {
+        "title": "Idle Transfiguration",
+        "arc": "Vs Mahito",
+        "intro": [
+            "Mahito reveals the true power of Idle Transfiguration.",
+            "His soul is his weapon - and he's perfected it.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "mahito",
+        "opponent_name": "Mahito",
+        "stage": "shibuya",
+        "difficulty": "normal",
+        "boss": True,
+        "reward_cp": 200,
+        "unlock_char": "todo",
+        "unlock_stage": None,
+        "dialogue_before": [
+            "Mahito: 'I've evolved, Yuji. Can you keep up?'",
+            "Yuji: 'I'll crush you with everything I have!'",
+        ],
+        "dialogue_after": [
+            "Todo: 'MY BROTHER! That was a magnificent fight!'",
+            "Yuji: 'Thanks, Todo. But he got away.'",
+        ],
+    },
+    5: {
+        "title": "Black Flash",
+        "arc": "Vs Mahito",
+        "intro": [
+            "Mahito has transformed into his true form.",
+            "Yuji must unlock the power of Black Flash to defeat him.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "mahito",
+        "opponent_name": "Mahito (True Form)",
+        "stage": "shibuya",
+        "difficulty": "hard",
+        "boss": True,
+        "reward_cp": 250,
+        "unlock_char": None,
+        "unlock_stage": None,
+        "dialogue_before": [
+            "Mahito: 'THIS IS MY TRUE FORM! TRANSFIGURE!'",
+            "Yuji: 'I'll end this NOW!'",
+        ],
+        "dialogue_after": [
+            "Yuji: 'It's over, Mahito. No more running.'",
+            "[Black Flash mastery unlocked - increased crit chance]",
+        ],
+    },
+    6: {
+        "title": "Goodwill Event",
+        "arc": "Goodwill Event",
+        "intro": [
+            "The Kyoto Goodwill Event begins.",
+            "But cursed spirits interrupt the competition.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "hanami",
+        "opponent_name": "Hanami",
+        "stage": "goodwill_forest",
+        "difficulty": "normal",
+        "boss": False,
+        "reward_cp": 180,
+        "unlock_char": "inumaki",
+        "unlock_stage": "goodwill_forest",
+        "dialogue_before": [
+            "Hanami: 'Nature shall reclaim what was taken.'",
+            "Yuji: 'Not if I have anything to say about it!'",
+        ],
+        "dialogue_after": [
+            "Inumaki: 'Salmon.'",
+            "Yuji: 'We held them off! But this is just the start.'",
+        ],
+    },
+    7: {
+        "title": "530,000 IQ",
+        "arc": "Goodwill Event",
+        "intro": [
+            "Todo challenges Yuji to a friendly spar.",
+            "Their bond as best friends strengthens through combat.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "todo",
+        "opponent_name": "Aoi Todo",
+        "stage": "goodwill_forest",
+        "difficulty": "normal",
+        "boss": False,
+        "reward_cp": 150,
+        "unlock_char": None,
+        "unlock_stage": None,
+        "dialogue_before": [
+            "Todo: 'YUJI! LET US FIGHT WITH EVERYTHING!'",
+            "Yuji: 'Bring it on, Todo!'",
+        ],
+        "dialogue_after": [
+            "Todo: 'YOU ARE MY BROTHER! NEVER FORGET THAT!'",
+            "Yuji: 'Best friends forever, Todo!'",
+        ],
+    },
+    8: {
+        "title": "Blood Brothers",
+        "arc": "Shibuya Prep",
+        "intro": [
+            "Choso appears, claiming to be Yuji's brother.",
+            "A battle of blood and family bonds begins.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "choso",
+        "opponent_name": "Choso",
+        "stage": "shibuya",
+        "difficulty": "hard",
+        "boss": False,
+        "reward_cp": 200,
+        "unlock_char": None,
+        "unlock_stage": None,
+        "dialogue_before": [
+            "Choso: 'You killed my brothers. Prepare to die.'",
+            "Yuji: 'I don't understand, but I won't back down!'",
+        ],
+        "dialogue_after": [
+            "Choso: 'Wait... I sense something. You may be...'",
+            "Yuji: 'What are you talking about?'",
+        ],
+    },
+    9: {
+        "title": "Shibuya Incident",
+        "arc": "Shibuya Incident",
+        "intro": [
+            "The Shibuya Incident begins. Curses swarm the city.",
+            "Jogo, the volcanic curse, stands in Yuji's way.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "jogo",
+        "opponent_name": "Jogo",
+        "stage": "shibuya",
+        "difficulty": "hard",
+        "boss": True,
+        "reward_cp": 250,
+        "unlock_char": "gojo",
+        "unlock_stage": None,
+        "dialogue_before": [
+            "Jogo: 'I'll burn you to ash, human!'",
+            "Yuji: 'Bring the heat. I can take it!'",
+        ],
+        "dialogue_after": [
+            "Yuji: 'Is everyone okay? We need to find Gojo-sensei!'",
+            "[Gojo Satoru unlocked!]",
+        ],
+    },
+    10: {
+        "title": "King of Curses",
+        "arc": "Shibuya Incident",
+        "intro": [
+            "Sukuna takes control. 15 fingers of power.",
+            "The King of Curses unleashes his true might.",
+        ],
+        "player_char": "gojo",
+        "opponent_char": "sukuna",
+        "opponent_name": "Sukuna (15 Fingers)",
+        "stage": "malevolent_shrine",
+        "difficulty": "cursed",
+        "boss": True,
+        "reward_cp": 300,
+        "unlock_char": "sukuna",
+        "unlock_stage": "malevolent_shrine",
+        "dialogue_before": [
+            "Sukuna: 'You dare challenge ME, Gojo?'",
+            "Gojo: 'Let's see if your Domain can match mine.'",
+        ],
+        "dialogue_after": [
+            "Gojo: 'He's too powerful in this state...'",
+            "Yuji: 'I'll take my body back! I PROMISE!'",
+        ],
+    },
+    11: {
+        "title": "Lightning God",
+        "arc": "Culling Game",
+        "intro": [
+            "The Culling Game begins. Hajime Kashimo enters the fray.",
+            "A lightning-wielding ancient sorcerer seeks the strongest.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "inumaki",
+        "opponent_name": "Kashimo",
+        "stage": "culling_game",
+        "difficulty": "hard",
+        "boss": True,
+        "reward_cp": 250,
+        "unlock_char": None,
+        "unlock_stage": "culling_game",
+        "dialogue_before": [
+            "Kashimo: 'Are you the strongest? SHOW ME!'",
+            "Yuji: 'I'm not the strongest. But I won't lose!'",
+        ],
+        "dialogue_after": [
+            "Kashimo: 'Interesting... You have potential.'",
+            "Yuji: 'The Culling Game is just getting started.'",
+        ],
+    },
+    12: {
+        "title": "The Mastermind",
+        "arc": "Culling Game",
+        "intro": [
+            "Kenjaku reveals his thousand-year plan.",
+            "The final battle for the future of jujutsu society.",
+        ],
+        "player_char": "yuji",
+        "opponent_char": "nanami",
+        "opponent_name": "Kenjaku",
+        "stage": "culling_game",
+        "difficulty": "cursed",
+        "boss": True,
+        "reward_cp": 500,
+        "unlock_char": None,
+        "unlock_stage": None,
+        "dialogue_before": [
+            "Kenjaku: 'Everything has led to this moment.'",
+            "Yuji: 'Your plan ends HERE!'",
+        ],
+        "dialogue_after": [
+            "Yuji: 'We did it... The curse is broken.'",
+            "[TRUE ENDING UNLOCKED - Story Complete!]",
+        ],
+    },
+}
+
+def get_chapter(chapter_id):
+    return STORY_CHAPTERS.get(chapter_id)
+
+def get_all_chapters():
+    return STORY_CHAPTERS
+
+def get_next_available_chapter(completed_chapters):
+    for ch_id in sorted(STORY_CHAPTERS.keys()):
+        if ch_id not in completed_chapters:
+            return ch_id
+    return None
