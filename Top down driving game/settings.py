@@ -1,1 +1,0 @@
-# Constants (screen size, speeds, colors)

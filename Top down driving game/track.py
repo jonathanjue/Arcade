@@ -1,1 +1,0 @@
-# Track class (walls, map loading, collision)
